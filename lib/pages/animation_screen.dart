@@ -149,7 +149,7 @@ class PathPainter extends CustomPainter {
 
   PathPainter(this.progress, this.bubbleScale);
 
-  void _drawDot(Canvas canvas, Offset position) {
+  void _drawStartDot(Canvas canvas, Offset position) {
     // Dış beyaz halka
     canvas.drawCircle(
       position,
@@ -175,6 +175,33 @@ class PathPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );
+  }
+
+  void _drawMovingDot(Canvas canvas, Offset position) {
+    // Dış beyaz halka
+    canvas.drawCircle(
+      position,
+      10,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill,
+    );
+
+    // İçi dolu turuncu daire
+    canvas.drawCircle(
+        position,
+        10,
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [
+              const Color(0xffF59841),
+              const Color(0xffEB6B50),
+            ],
+          ).createShader(
+              Rect.fromLTWH(position.dx - 10, position.dy - 10, 20, 20))
+          ..style = PaintingStyle.fill);
   }
 
   void _drawWeightBubble(
@@ -346,17 +373,17 @@ class PathPainter extends CustomPainter {
       _drawWeightBubble(canvas, endPoint, '89.0 KG', bubbleScale);
     }
 
-    // Başlangıç noktası dot'unu çiz
-    _drawDot(canvas, startPoint);
+    // Başlangıç noktası dot'unu çiz (içi boş)
+    _drawStartDot(canvas, startPoint);
 
-    // Hareketli nokta
+    // Hareketli nokta (içi dolu)
     if (progress > 0) {
       final pathMetrics = path.computeMetrics().first;
       final tangent =
           pathMetrics.getTangentForOffset(pathMetrics.length * progress);
 
       if (tangent != null) {
-        _drawDot(canvas, tangent.position);
+        _drawMovingDot(canvas, tangent.position);
       }
     }
 
