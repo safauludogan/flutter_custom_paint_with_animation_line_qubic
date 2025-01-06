@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+enum WeightGoal {
+  gain, // Kilo alma hedefi
+  loss, // Kilo verme hedefi
+  maintain // Kilo koruma hedefi
+}
+
 class AnimationScreen extends StatefulWidget {
   const AnimationScreen({super.key});
 
@@ -13,6 +19,8 @@ class _AnimationScreenState extends State<AnimationScreen>
   late Animation<double> _animation;
   late AnimationController _bubbleController;
   late Animation<double> _bubbleAnimation;
+
+  final WeightGoal weightGoal = WeightGoal.loss;
 
   @override
   void initState() {
@@ -109,8 +117,8 @@ class _AnimationScreenState extends State<AnimationScreen>
                           builder: (context, child) {
                             return CustomPaint(
                               size: const Size(double.infinity, 300),
-                              painter: PathPainter(
-                                  _animation.value, _bubbleAnimation.value),
+                              painter: PathPainter(_animation.value,
+                                  _bubbleAnimation.value, weightGoal),
                             );
                           },
                         ),
@@ -146,8 +154,9 @@ class _AnimationScreenState extends State<AnimationScreen>
 class PathPainter extends CustomPainter {
   final double progress;
   final double bubbleScale;
+  final WeightGoal weightGoal;
 
-  PathPainter(this.progress, this.bubbleScale);
+  PathPainter(this.progress, this.bubbleScale, this.weightGoal);
 
   void _drawStartDot(Canvas canvas, Offset position) {
     // Dış beyaz halka
@@ -325,16 +334,19 @@ class PathPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final path = Path();
-    final startPoint = Offset(0, size.height * 0.94);
-    final endPoint = Offset(drawingWidth, size.height * 0.55);
+
+    // Başlangıç ve bitiş noktalarını hedefe göre ayarla
+    final startPoint = Offset(0, _getStartPointY(size));
+    final endPoint = Offset(drawingWidth, _getEndPointY(size));
 
     path.moveTo(startPoint.dx, startPoint.dy);
 
+    // Kontrol noktalarını hedefe göre ayarla
     path.cubicTo(
       drawingWidth * 0.3,
-      size.height * 0.95,
+      _getFirstControlPointY(size),
       drawingWidth * 0.3,
-      size.height * 0.55,
+      _getSecondControlPointY(size),
       endPoint.dx,
       endPoint.dy,
     );
@@ -402,6 +414,51 @@ class PathPainter extends CustomPainter {
     _drawText(canvas, 'Bugün', startTextPosition);
     _drawText(canvas, 'Şubat', middleTextPosition);
     _drawText(canvas, 'Bitiş', endTextPosition);
+  }
+
+  // Y koordinatlarını hesaplayan yardımcı metodlar
+  double _getStartPointY(Size size) {
+    switch (weightGoal) {
+      case WeightGoal.gain:
+        return size.height * 0.94; // Aşağıdan başla
+      case WeightGoal.loss:
+        return size.height * 0.55; // Yukarıdan başla
+      case WeightGoal.maintain:
+        return size.height * 0.75; // Ortadan başla
+    }
+  }
+
+  double _getEndPointY(Size size) {
+    switch (weightGoal) {
+      case WeightGoal.gain:
+        return size.height * 0.55; // Yukarıda bitir
+      case WeightGoal.loss:
+        return size.height * 0.94; // Aşağıda bitir
+      case WeightGoal.maintain:
+        return size.height * 0.75; // Aynı seviyede bitir
+    }
+  }
+
+  double _getFirstControlPointY(Size size) {
+    switch (weightGoal) {
+      case WeightGoal.gain:
+        return size.height * 0.95;
+      case WeightGoal.loss:
+        return size.height * 0.55;
+      case WeightGoal.maintain:
+        return size.height * 0.70; // Hafif aşağı
+    }
+  }
+
+  double _getSecondControlPointY(Size size) {
+    switch (weightGoal) {
+      case WeightGoal.gain:
+        return size.height * 0.55;
+      case WeightGoal.loss:
+        return size.height * 0.95;
+      case WeightGoal.maintain:
+        return size.height * 0.80; // Hafif yukarı
+    }
   }
 
   @override
